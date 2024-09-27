@@ -14,12 +14,13 @@ import org.apache.flink.runtime.checkpoint.OperatorSubtaskState;
 import org.apache.flink.runtime.checkpoint.metadata.CheckpointMetadata;
 import org.apache.flink.runtime.state.KeyGroupsStateHandle;
 import org.apache.flink.runtime.state.KeyedStateHandle;
+import org.apache.flink.runtime.state.filesystem.FsStateBackend;
 import org.apache.flink.runtime.state.hashmap.HashMapStateBackend;
-import org.apache.flink.state.api.ExistingSavepoint;
-import org.apache.flink.state.api.Savepoint;
+import org.apache.flink.state.api.OperatorIdentifier;
 import org.apache.flink.state.api.SavepointReader;
 import org.apache.flink.state.api.functions.KeyedStateReaderFunction;
 import org.apache.flink.state.api.runtime.SavepointLoader;
+import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.util.Collector;
 
@@ -42,30 +43,48 @@ public class ReadCheckpoint {
 
     public static void readState(String ckPath) throws Exception {
         ExecutionEnvironment bEnv = ExecutionEnvironment.getExecutionEnvironment();
+        StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
         bEnv.setParallelism(1);
 
-        ExistingSavepoint savepoint = Savepoint.load(bEnv, ckPath, new HashMapStateBackend());
+//        ExistingSavepoint savepoint = Savepoint.load(bEnv, ckPath, new HashMapStateBackend());
+        SavepointReader savepointReader=SavepointReader.read(env,ckPath);
         // 定义 KeyedStateReaderFunction 读取状态
-        DataSet<Tuple2<String, Integer>> keyedCountState = savepoint.readKeyedState(
-                "wc-sum",
-                new KeyedStateReaderFunction<String, Tuple2<String, Integer>>() {
-                    private ValueState<Integer> countState;
+//        DataSet<Tuple2<String, Integer>> keyedCountState = savepointReader.readKeyedState(
+//                "wc-sum",
+//                new KeyedStateReaderFunction<String, Tuple2<String, Integer>>() {
+//                    private ValueState<Integer> countState;
+//
+//                    @Override
+//                    public void open(Configuration parameters) throws Exception {
+//                        countState = getRuntimeContext().getState(new ValueStateDescriptor<Integer>(
+//                                "count",
+//                                Integer.class));
+//                    }
+//
+//                    @Override
+//                    public void readKey(
+//                            String key,
+//                            Context ctx,
+//                            Collector<Tuple2<String, Integer>> out) throws Exception {
+//                        out.collect(new Tuple2<>(key, countState.value()));
+//                    }
+//                });
+        DataStream<Tuple2<String, Integer>> keyedCountState=savepointReader.readKeyedState(OperatorIdentifier.forUid("wc" +
+            "-sum"), new KeyedStateReaderFunction<String,Tuple2<String,Integer>>() {
+            private ValueState<Integer> countState;
+            @Override
+            public void open(Configuration configuration) throws Exception {
+                                        countState = getRuntimeContext().getState(new ValueStateDescriptor<Integer>(
+                                                "count",
+                                                Integer.class));
+            }
 
-                    @Override
-                    public void open(Configuration parameters) throws Exception {
-                        countState = getRuntimeContext().getState(new ValueStateDescriptor<Integer>(
-                                "count",
-                                Integer.class));
-                    }
-
-                    @Override
-                    public void readKey(
-                            String key,
-                            Context ctx,
-                            Collector<Tuple2<String, Integer>> out) throws Exception {
-                        out.collect(new Tuple2<>(key, countState.value()));
-                    }
-                });
+            @Override
+            public void readKey(String s, Context context, Collector<Tuple2<String, Integer>> collector)
+                throws Exception {
+                collector.collect(new Tuple2<>(s, countState.value()));
+            }
+        });
         keyedCountState.print();
     }
 
