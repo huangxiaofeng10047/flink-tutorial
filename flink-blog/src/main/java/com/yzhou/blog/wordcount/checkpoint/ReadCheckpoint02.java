@@ -7,7 +7,7 @@ import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 
 public class ReadCheckpoint02 {
     public static void main(String[] args) throws Exception {
-        String metadataPath = "D:\\TMP\\7caba09b0eea52c93cbaf809a3a2c2fa\\chk-1";
+        String metadataPath = "/home/xfhuang/workspace/bigdata/src/flink/cppath/9bca2c9f2a319f31b3c481b672262e44/chk-1";
 
         //String metadataPath = "D:\\TMP\\c43c2293d311ddc1b6151451bcc95a71\\chk-7";
 

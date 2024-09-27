@@ -1,10 +1,9 @@
 package com.yzhou.blog.wordcount;
 
-import org.apache.flink.api.common.restartstrategy.RestartStrategies;
-import org.apache.flink.api.common.time.Time;
 import org.apache.flink.api.common.typeinfo.Types;
 import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.configuration.Configuration;
+import org.apache.flink.configuration.RestartStrategyOptions;
 import org.apache.flink.streaming.api.datastream.DataStreamSource;
 import org.apache.flink.streaming.api.datastream.KeyedStream;
 import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
@@ -12,6 +11,7 @@ import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.util.Collector;
 import org.apache.log4j.Logger;
 
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
 
@@ -22,13 +22,18 @@ public class StreamWordCount {
         // 1. 创建流式执行环境
 //        StreamExecutionEnvironment env = StreamExecutionEnvironment
 //                .createLocalEnvironmentWithWebUI(new Configuration());
+        Configuration conf=new Configuration();
+        conf.set(RestartStrategyOptions.RESTART_STRATEGY,"fixed-delay");
+        conf.set(RestartStrategyOptions.RESTART_STRATEGY_FIXED_DELAY_DELAY, Duration.ofSeconds(10));
+        conf.set(RestartStrategyOptions.RESTART_STRATEGY_FIXED_DELAY_ATTEMPTS,3);
         StreamExecutionEnvironment env = StreamExecutionEnvironment
-                .getExecutionEnvironment(new Configuration());
-        env.setRestartStrategy(RestartStrategies
-                .fixedDelayRestart(3, Time.of(10, TimeUnit.SECONDS)));
+                .getExecutionEnvironment(conf);
+
+//        env.setRestartStrategy(RestartStrategies
+//                .fixedDelayRestart(3, Time.of(10, TimeUnit.SECONDS)));
         // 2. Socket 读取  nc -lk 7777
         DataStreamSource<String> lineDSS = env
-                .socketTextStream("localhost", 7777);
+                .socketTextStream("0.0.0.0", 7777);
 
         // 3. 转换数据格式
         SingleOutputStreamOperator<Tuple2<String, Long>> wordAndOne = lineDSS
