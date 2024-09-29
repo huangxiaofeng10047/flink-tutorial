@@ -21,6 +21,8 @@
         <module>flink-jar</module>
         <module>flink-udf</module>
         <module>flink-blog</module>
+        <module>flink-blog-log4j</module>
+        <module>flink-blog-logback</module>
     </modules>
 
     <properties>

@@ -1,0 +1,31 @@
+<configuration>
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss} [%-32X{flink-job-id}] %c{0}  %m%n</pattern>
+        </encoder>
+    </appender>
+
+    <appender name="ROLLING_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>logs/app.log</file>
+
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>logs/app-%d{yyyy-MM-dd-HH}-%i.log</fileNamePattern>
+            <!-- 单个日志文件超过10M，则进行滚动，对文件进行递增编号(即%i) -->
+            <maxFileSize>10MB</maxFileSize>
+            <!-- 所有日志文件的大小限制，超出则删除旧文件 -->
+            <totalSizeCap>5GB</totalSizeCap>
+            <!-- 与fileNamePattern相结合，本例中由于时间粒度是小时，因此这里表示保存48个小时 -->
+            <maxHistory>48</maxHistory>
+        </rollingPolicy>
+
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss} [%-32X{flink-job-id}] %c{0}  %m%n</pattern>
+        </encoder>
+    </appender>
+
+    <root level="INFO">
+        <appender-ref ref="CONSOLE" />
+        <appender-ref ref="ROLLING_FILE" />
+    </root>
+</configuration>
+
